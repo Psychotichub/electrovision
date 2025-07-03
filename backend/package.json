@@ -1,0 +1,57 @@
+{
+  "name": "electrovision-ai-backend",
+  "version": "1.0.0",
+  "description": "ElectroVision AI Backend - Electrical Plan Analysis Server",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "jest",
+    "lint": "eslint .",
+    "install-python-deps": "pip install -r ../requirements.txt",
+    "setup": "npm install && npm run install-python-deps",
+    "analyze": "node scripts/analyze-upload.js",
+    "health": "curl -f http://localhost:3000/ || exit 1"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^17.0.0",
+    "express": "^5.1.0",
+    "multer": "^2.0.1",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0",
+    "joi": "^17.11.0",
+    "winston": "^3.11.0",
+    "socket.io": "^4.7.4",
+    "sharp": "^0.33.0",
+    "archiver": "^6.0.1",
+    "express-validator": "^7.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3",
+    "eslint": "^8.54.0"
+  },
+  "keywords": [
+    "electrical",
+    "ai",
+    "cad",
+    "pdf",
+    "analysis",
+    "yolo",
+    "computer-vision"
+  ],
+  "author": "Psychotic",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/psychotic/electrovision-ai"
+  }
+}

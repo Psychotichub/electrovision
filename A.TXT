@@ -1,0 +1,1 @@
+generate a frontend component React to visualize the dashboard data wich is extract from uploaded file

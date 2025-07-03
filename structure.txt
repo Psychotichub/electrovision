@@ -1,0 +1,41 @@
+ElectroVision-AI/
+├── backend/                   # Node.js + Python Backend
+│   ├── app.js                 # Main Express server
+│   ├── routes/
+│   │   └── upload.js          # Upload endpoint
+│   ├── controllers/
+│   │   └── analyzeController.js  # Python trigger logic
+│   ├── python/                # Python-based AI & Parsing
+│   │   ├── parse_pdf.py
+│   │   ├── parse_dxf.py
+│   │   ├── detect_components.py
+│   │   └── utils/
+│   │       ├── image_utils.py
+│   │       └── ocr_utils.py
+│   ├── uploads/               # Uploaded files
+│   └── results/               # Parsed component data
+│
+├── ai-model/                  # YOLOv8 Model Training
+│   ├── dataset/
+│   │   ├── images/
+│   │   └── labels/
+│   ├── train.py               # Training script
+│   └── config.yaml            # Custom model config
+│
+├── frontend/                  # React UI
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── App.jsx
+│   └── tailwind.config.js
+│
+├── data-prep/                 # Dataset Preparation
+│   ├── extract_from_pdf.py
+│   ├── format_converter.py
+│   └── annotate_with_labelimg.md
+│
+├── README.md
+├── .env                       # API keys or configs
+├── package.json               # Node.js deps
+├── requirements.txt           # Python deps

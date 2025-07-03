@@ -1,0 +1,89 @@
+# ElectroVision AI - YOLO Training Configuration
+
+# Dataset paths (relative to this config file)
+train: dataset/images/train
+val: dataset/images/val
+test: dataset/images/test
+
+# Number of classes
+nc: 12
+
+# Class names for electrical components
+names:
+  0: 'switch'           # Light switches, toggle switches
+  1: 'outlet'           # Electrical outlets, sockets, receptacles  
+  2: 'light'            # Light fixtures, lamps, ceiling lights
+  3: 'panel'            # Electrical panels, distribution boards
+  4: 'wire'             # Electrical wires, cables, conduits
+  5: 'junction'         # Wire junctions, connection points
+  6: 'breaker'          # Circuit breakers, fuses
+  7: 'ground'           # Ground symbols, earth connections
+  8: 'measurement'      # Voltage/amperage/power measurements
+  9: 'motor'            # Electric motors, fans
+  10: 'transformer'     # Transformers, voltage converters
+  11: 'sensor'          # Sensors, detectors, monitors
+
+# Training hyperparameters
+epochs: 100
+batch_size: 16
+img_size: 640
+workers: 8
+
+# Optimization settings
+optimizer: 'AdamW'
+lr0: 0.01
+weight_decay: 0.0005
+momentum: 0.937
+
+# Augmentation settings
+augment: true
+mixup: 0.1
+copy_paste: 0.3
+degrees: 10.0
+translate: 0.1
+scale: 0.5
+shear: 2.0
+perspective: 0.0
+flipud: 0.0
+fliplr: 0.5
+mosaic: 1.0
+hsv_h: 0.015
+hsv_s: 0.7
+hsv_v: 0.4
+
+# Validation settings
+val_split: 0.2
+save_period: 10
+patience: 50
+
+# Model architecture
+model: 'yolov8n.pt'  # Starting model (nano for faster training)
+pretrained: true
+
+# Hardware settings
+device: ''  # Auto-detect (cuda if available, else cpu)
+multi_scale: false
+single_cls: false
+
+# Logging and saving
+project: 'runs/train'
+name: 'electrical_components'
+save: true
+save_txt: false
+save_conf: false
+save_crop: false
+show_labels: true
+show_conf: true
+visualize: false
+augment_val: false
+cache: false
+rect: false
+resume: false
+nosave: false
+noval: false
+noautoanchor: false
+evolve: false
+bucket: ''
+cfg: ''
+weights: ''
+imgsz: 640
