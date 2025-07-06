@@ -35,6 +35,6 @@ psutil
 py7zr
 rarfile
 # ONNX packages for model export
-onnx>=1.18.0
-onnxruntime>=1.22.0
-onnxslim>=0.1.58
+onnx
+onnxruntime
+onnxslim

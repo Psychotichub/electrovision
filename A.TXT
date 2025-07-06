@@ -1,1 +1,14 @@
 generate a frontend component React to visualize the dashboard data wich is extract from uploaded file
+
+🎯 Training Data Summary:
+   Total images extracted: 1312
+   Training images: 1049
+   Validation images: 263
+
+📋 Next Steps:
+   1. Install annotation tool: pip install labelImg
+   2. Annotate images: labelImg dataset/images/train dataset/labels/train
+   3. Label electrical components (9 classes):
+      0=switch, 1=outlet, 2=light, 3=panel, 4=wire
+      5=junction, 6=breaker, 7=ground, 8=measurement
+   4. Start training: python train.py

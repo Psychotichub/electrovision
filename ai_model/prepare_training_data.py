@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
 """
-⚡ ElectroVision AI - DWG/PDF to Training Data Converter
+⚡ ElectroVision AI - DWG/PDF/Image to Training Data Converter
 
-This script converts your DWG and PDF electrical plans into training images
+This script converts your DWG, PDF, and image electrical plans into training images
 that can be annotated and used for AI model training.
+
+Supported formats:
+• PDF files (multi-page extraction)
+• DWG files (converted via DXF)
+• DXF files (vector to raster conversion)
+• Image files (JPG, PNG, TIFF, BMP, GIF, WEBP)
 """
 
 import os
@@ -27,6 +33,7 @@ def setup_directories():
         "source_files/pdf",
         "source_files/dwg", 
         "source_files/dxf",
+        "source_files/images",
         "extracted_images"
     ]
     
@@ -223,6 +230,54 @@ def dxf_to_image(dxf_path: str, output_dir: str, prefix: str = "plan") -> List[s
         print(f"  ❌ Error converting DXF to image: {e}")
         return []
 
+def process_image_files(image_path: str, output_dir: str, prefix: str = "img") -> List[str]:
+    """Process image files for training (JPG, PNG, TIFF, BMP, GIF, etc.)"""
+    
+    print(f"🖼️ Processing Image: {image_path}")
+    
+    try:
+        # Load image
+        img = Image.open(image_path)
+        
+        # Convert to RGB if needed (handles RGBA, grayscale, etc.)
+        if img.mode != 'RGB':
+            # Handle transparency for RGBA images
+            if img.mode == 'RGBA':
+                # Create white background
+                rgb_img = Image.new('RGB', img.size, (255, 255, 255))
+                rgb_img.paste(img, mask=img.split()[3])  # Use alpha channel as mask
+                img = rgb_img
+            else:
+                img = img.convert('RGB')
+        
+        # Enhance image quality for AI training
+        enhancer = ImageEnhance.Contrast(img)
+        img = enhancer.enhance(1.2)  # Slight contrast boost
+        
+        # Enhance sharpness for better feature detection
+        enhancer = ImageEnhance.Sharpness(img)
+        img = enhancer.enhance(1.1)  # Slight sharpness boost
+        
+        # Optional: Resize very large images to reasonable size (max 4K width/height)
+        max_size = 4096
+        if img.width > max_size or img.height > max_size:
+            img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+            print(f"  📏 Resized large image to {img.width}x{img.height}")
+        
+        # Save as high-quality JPG
+        image_file = Path(image_path)
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)  # Create output directory if it doesn't exist
+        jpg_filename = f"{output_dir}/{prefix}_{image_file.stem}.jpg"
+        img.save(jpg_filename, 'JPEG', quality=95)
+        
+        print(f"  ✅ Processed image → {jpg_filename}")
+        return [jpg_filename]
+        
+    except Exception as e:
+        print(f"  ❌ Error processing image: {e}")
+        return []
+
 def organize_training_data(image_files: List[str], split_ratio: float = 0.8):
     """Organize extracted images into train/val splits"""
     
@@ -259,27 +314,46 @@ def organize_training_data(image_files: List[str], split_ratio: float = 0.8):
     
     return len(train_files), len(val_files)
 
-def scan_source_files(source_dir: str) -> Tuple[List[str], List[str], List[str]]:
-    """Scan for PDF, DWG, and DXF files in source directory"""
+def scan_source_files(source_dir: str) -> Tuple[List[str], List[str], List[str], List[str]]:
+    """Scan for PDF, DWG, DXF, and image files in source directory"""
     
     pdf_files = []
     dwg_files = []
     dxf_files = []
+    image_files = []
     
     source_path = Path(source_dir)
     if source_path.exists():
+        # PDF files
         pdf_files = list(source_path.glob("**/*.pdf")) + list(source_path.glob("**/*.PDF"))
+        
+        # DWG files
         dwg_files = list(source_path.glob("**/*.dwg")) + list(source_path.glob("**/*.DWG"))
+        
+        # DXF files
         dxf_files = list(source_path.glob("**/*.dxf")) + list(source_path.glob("**/*.DXF"))
+        
+        # Image files (common formats)
+        image_extensions = [
+            "*.jpg", "*.jpeg", "*.JPG", "*.JPEG",
+            "*.png", "*.PNG", 
+            "*.tiff", "*.tif", "*.TIFF", "*.TIF",
+            "*.bmp", "*.BMP",
+            "*.gif", "*.GIF",
+            "*.webp", "*.WEBP"
+        ]
+        
+        for ext in image_extensions:
+            image_files.extend(list(source_path.glob(f"**/{ext}")))
     
-    return [str(f) for f in pdf_files], [str(f) for f in dwg_files], [str(f) for f in dxf_files]
+    return [str(f) for f in pdf_files], [str(f) for f in dwg_files], [str(f) for f in dxf_files], [str(f) for f in image_files]
 
 def main():
     """Main function to convert electrical plans to training data"""
     
-    parser = argparse.ArgumentParser(description='Convert DWG/PDF electrical plans to training images')
+    parser = argparse.ArgumentParser(description='Convert DWG/PDF/Image electrical plans to training images')
     parser.add_argument('--source', '-s', default='source_files', 
-                       help='Source directory containing PDF/DWG files')
+                       help='Source directory containing PDF/DWG/Image files')
     parser.add_argument('--output', '-o', default='extracted_images',
                        help='Output directory for extracted images')
     parser.add_argument('--split', type=float, default=0.8,
@@ -287,7 +361,7 @@ def main():
     
     args = parser.parse_args()
     
-    print("⚡ ElectroVision AI - DWG/PDF Training Data Converter")
+    print("⚡ ElectroVision AI - DWG/PDF/Image Training Data Converter")
     print("="*60)
     
     # Setup directories
@@ -295,18 +369,20 @@ def main():
     
     # Scan for source files
     print(f"\n🔍 Scanning for electrical plan files in: {args.source}")
-    pdf_files, dwg_files, dxf_files = scan_source_files(args.source)
+    pdf_files, dwg_files, dxf_files, image_files = scan_source_files(args.source)
     
     print(f"📄 Found {len(pdf_files)} PDF files")
     print(f"📐 Found {len(dwg_files)} DWG files") 
     print(f"📋 Found {len(dxf_files)} DXF files")
+    print(f"🖼️ Found {len(image_files)} image files")
     
-    if not (pdf_files or dwg_files or dxf_files):
+    if not (pdf_files or dwg_files or dxf_files or image_files):
         print(f"\n⚠️ No electrical plan files found in {args.source}")
         print("📁 Please place your files in:")
         print(f"   • PDF files → {args.source}/pdf/")
         print(f"   • DWG files → {args.source}/dwg/")
         print(f"   • DXF files → {args.source}/dxf/")
+        print(f"   • Image files → {args.source}/images/")
         return
     
     all_extracted_images = []
@@ -338,6 +414,14 @@ def main():
         for dxf_file in dxf_files:
             dxf_name = Path(dxf_file).stem
             images = dxf_to_image(dxf_file, args.output, f"dxf_{dxf_name}")
+            all_extracted_images.extend(images)
+    
+    # Process Image files
+    if image_files:
+        print(f"\n🖼️ Processing {len(image_files)} image files...")
+        for image_file in image_files:
+            image_name = Path(image_file).stem
+            images = process_image_files(image_file, args.output, f"img_{image_name}")
             all_extracted_images.extend(images)
     
     # Organize for training

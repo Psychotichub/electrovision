@@ -39,3 +39,18 @@ ElectroVision-AI/
 ├── .env                       # API keys or configs
 ├── package.json               # Node.js deps
 ├── requirements.txt           # Python deps
+
+
+
+lABELIMG STRUCTURE
+ai_model/dataset/
+├── images/
+│   ├── train/          <- 1,049 training images ✅
+│   └── val/            <- validation images
+├── labels/
+│   ├── train/          <- 1,049 annotation files ✅
+│   └── val/            <- validation annotations
+├── classes.txt         <- 15 defined classes ✅
+├── LABELING_GUIDE.md   <- Complete usage guide ✅
+├── QUICK_REFERENCE.md  <- Quick reference card ✅
+└── check_progress.py   <- Progress monitoring tool ✅
