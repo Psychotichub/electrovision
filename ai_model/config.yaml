@@ -6,101 +6,112 @@ val: dataset/images/val
 test: dataset/images/test
 
 # Number of classes
-nc: 91
+nc: 77
 
 # Class names for electrical components (single source of truth)
 names:
-  0: 'main_breaker'            # मुख्य सर्किट ब्रेकर – सम्पूर्ण पावर कट गर्न प्रयोग गरिन्छ
-  1: 'mcb'                     # मिनिएचर सर्किट ब्रेकर – ओभरलोड र सर्ट सर्किट सुरक्षा
-  2: 'rccb'                    # रेसिडुअल करेन्ट सर्किट ब्रेकर – करेन्ट लीक भएको जाँच्न
-  3: 'elcb'                    # अर्थ लीक ब्रेकर – अर्थिङ लीक डिटेक्सन
-  4: 'fuse'                    # फ्यूज – ओभर करेन्ट हुँदा जल्ने सुरक्षा यन्त्र
-  5: 'distribution_panel'      # पावर वितरण प्यानल – सबै ब्रेकरहरू राखिन्छ
-  6: 'busbar'                  # बसबार – पावर ट्रान्सफर गर्न कन्डक्टिव बारहरू
-  7: 'isolator'                # आइसोलेटर – मर्मतको लागि लाइन काट्न प्रयोग गरिन्छ
-  8: 'contactor'               # कन्ट्याक्टर – मोटर जस्ता लोडहरूको स्विचिङ
-  9: 'relay'                   # रिलेज – इलेक्ट्रिकल सिग्नलबाट नियन्त्रण हुने स्विच
-  10: 'overload_relay'         # मोटर ओभरलोडबाट जोगाउन प्रयोग हुने सुरक्षा यन्त्र
-  11: 'spd'                    # सर्ज प्रोटेक्सन डिभाइस – भोल्टेज स्पाइकबाट रक्षा
-  12: 'timer'                  # टाइमर – निश्चित समयपछि स्विच अन/अफ हुने यन्त्र
-  13: 'ct'                     # करेन्ट ट्रान्सफर्मर – करेन्ट मापनका लागि
-  14: 'pt'                     # भोल्टेज ट्रान्सफर्मर – भोल्टेज मापनका लागि
-  15: 'lightning_arrester'     # बिजुलीबाट उपकरण रक्षा गर्ने यन्त्र
-  16: 'wire'                   # सामान्य सिंगल वायर – सर्किट जडानको लागि
-  17: 'cable'                  # मल्टी-कोर केबल – पावर ट्रान्समिसन
-  18: 'conduit'                # पाइप/डक्ट – केबल राख्न प्रयोग हुने
-  19: 'cable_tray'             # केबल ट्रे – ठूला केबलहरू सँगठित राख्न प्रयोग हुने
-  20: 'pull_box'               # केबल तान्न सजिलो बनाउन प्रयोग हुने बक्स
-  21: 'gland'                  # केबललाई उपकरणमा सुरक्षित जडान गर्न
-  22: 'lug'                    # केबलको अन्त्यमा राख्ने टर्मिनल
-  23: 'busbar_chamber'         # बसबार राख्ने सानो एनक्लोजर
-  24: 'single_switch'          # सामान्य स्विच – सर्किट अन/अफ गर्न
-  25: 'two_way_switch'        # दुई तरिका स्विच – लाइटको ब्राइटनेस नियन्त्रण गर्ने स्विच
-  26: 'push_button'            # प्रेस गरेर अन/अफ हुने बटन
-  27: 'selector_switch'       # मोड चयन गर्न सकिने स्विच (जस्तै Auto/Manual)
-  28: 'limit_switch'           # मेकानिकल मूभमेन्ट डिटेक्ट गर्ने स्विच
-  29: 'float_switch'           # पानीको लेभल अनुसार काम गर्ने स्विच
-  30: 'rotary_switch'          # घुमाएर मोड परिवर्तन गर्ने स्विच
-  31: 'emergency_stop'         # आपतकालीन अवस्थाका लागि स्टप बटन
-  32: 'led_light'              # एलईडी लाइट – energy efficient प्रकाश
-  33: 'round_light'            # परम्परागत फिलामेन्ट बल्ब
-  34: 'tube_light'             # लामो ट्यूब आकारको लाइट
-  35: 'flood_light'            # ठूला क्षेत्र उज्यालो बनाउन प्रयोग हुने लाइट
-  36: 'street_light'           # सडक बत्ती
-  37: 'sensor'    # गति पत्ता लागेपछि बल्ने लाइट
-  38: 'emergency_light'        # पावर गयो भने स्वतः बल्ने लाइट
-  39: 'power_socket'           # सामान्य पावर प्लग जडान गर्न
-  40: 'industrial_socket'      # उच्च पावर उपकरणका लागि सकेट
-  41: 'earth_rod'              # जमिनमा गाडिने अर्थिङ रड
-  42: 'earthing_wire'          # अर्थिङमा प्रयोग हुने वायर
-  43: 'earth_pit'              # अर्थिङको लागि बनाइने गहिरो खाडल
-  44: 'earth_busbar'           # अर्थ कनेक्सनहरूको लागि बसबार
-  45: 'earth_terminal'         # उपकरणको अर्थिङ टर्मिनल
-  46: 'lightning_protection'   # लाइटनिङ स्ट्राइक रोक्न प्रयोग हुने सिस्टम
-  47: 'voltmeter'              # भोल्टेज मापन गर्ने उपकरण
-  48: 'ammeter'                # करेन्ट मापन गर्ने उपकरण
-  49: 'power_meter'            # पावर मापन गर्ने यन्त्र
-  50: 'energy_meter'           # ऊर्जा (kWh) मापन गर्ने यन्त्र
-  51: 'multifunction_meter'    # भोल्ट, एम्प, पावर आदि एकै ठाउँमा मापन
-  52: 'frequency_meter'        # फ्रिक्वेन्सी (Hz) मापन गर्ने
-  53: 'power_factor_meter'     # पावर फैक्टर मापन गर्न प्रयोग हुने यन्त्र
-  54: 'plc'                    # प्रोग्रामेबल लोजिक कन्ट्रोलर – अटोमेसनको लागि
-  55: 'rtu'                    # रिमोट टर्मिनल युनिट – SCADA मा डेटा पठाउन
-  56: 'hmi'                    # मानव-मेसिन इन्टरफेस – PLC सँग इन्टरएक्ट गर्न
-  57: 'bms_sensor'             # बिल्डिङ म्यानेजमेन्ट सिस्टमका लागि सेन्सर
-  58: 'intercom'               # आन्तरिक संचारका लागि उपकरण
-  59: 'wifi_router'            # वायरलेस इन्टरनेट वितरण
-  60: 'transformer'            # भोल्टेज बढाउने वा घटाउने उपकरण
-  61: 'ups'                    # ब्याकअप पावरका लागि अनइन्टरप्टेबल पावर सप्लाई
-  62: 'inverter'               # DC लाई AC मा रूपान्तरण गर्ने
-  63: 'battery_bank'           # ब्याकअप पावर स्टोरेज
-  64: 'solar_panel'            # सौर्य ऊर्जाबाट बिजुली उत्पादन
-  65: 'generator'              # डीजल वा अन्य इन्धनबाट पावर उत्पादन गर्ने
-  66: 'motor'                  # इलेक्ट्रिक मोटर
-  67: 'vfd'                    # मोटरको स्पीड कन्ट्रोल गर्न प्रयोग हुने ड्राइभ
-  68: 'indicator_lamp'         # सिग्नल देखाउने लाइट
-  69: 'buzzer'                 # साउन्ड अलार्म दिने यन्त्र
-  70: 'alarm_system'           # सम्पूर्ण सुरक्षा अलार्म सिस्टम
-  71: 'pilot_lamp'             # उपकरण अन/अफ संकेत गर्ने सानो लाइट
-  72: 'signal_lamp'            # नियन्त्रण संकेत दिन प्रयोग हुने लाइट
-  73: 'fire_alarm_panel'       # फायर सेन्सरहरू नियन्त्रण गर्ने मुख्य प्यानल
-  74: 'smoke_detector'         # धुवाँ पत्ता लगाउने सेन्सर
-  75: 'heat_detector'          # तापक्रम आधारित फायर डिटेक्सन
-  76: 'cctv_camera'            # निगरानी क्यामेरा
-  77: 'motion_detector'        # गति पत्ता लगाउने सेन्सर
-  78: 'access_control'         # कार्ड वा फिंगरप्रिन्टद्वारा प्रवेश नियन्त्रण
-  79: 'name_plate'             # उपकरणमा लगाइने नाम लेखिएको प्लेट
-  80: 'label_tag'              # तार वा उपकरण पहिचानको लागि ट्याग
-  81: 'circuit_diagram_legend' # इलेक्ट्रिकल सिम्बोलहरूको व्याख्या
-  82: 'mounting_frame'         # उपकरणहरू जडान गर्न प्रयोग हुने फ्रेम
-  83: 'heat_shrink'            # तार इन्सुलेसनको लागि सुकाउने ट्युब
-  84: 'expansion_joint'        # केबल ट्रे जडान गर्न प्रयोग हुने जोइन्ट
-  85: 'cable_marker'           # केबल पहिचानको लागि मार्कर
-  86: 'terminal_block'         # वायर जडान गर्न प्रयोग हुने ब्लक
-  87: 'din_rail'               # उपकरणहरू माउन्ट गर्न प्रयोग हुने रेल
-  88: 'enclosure'              # उपकरणहरू राख्न प्रयोग हुने बक्स
-  89: 'ventilation_fan'        # इलेक्ट्रिकल प्यानलको हावा चलाउन प्रयोग हुने फ्यान
-  90: 'cooling_unit'           # उपकरणहरू चिसो राख्न प्रयोग हुने यन्त्र
+  # Protection & Safety Components
+  0: 'main_breaker'            # Main circuit breaker - cuts entire power
+  1: 'mcb'                     # Miniature circuit breaker - overload & short circuit protection
+  2: 'fuse'                    # Fuse - burns out during overcurrent
+  3: 'distribution_panel'      # Power distribution panel - houses all breakers
+  4: 'isolator'                # Isolator - used to cut line for maintenance
+  5: 'overload_relay'          # Motor overload protection device
+  6: 'lightning_arrester'      # Lightning protection device
+  7: 'emergency_stop'          # Emergency stop button
+  
+  # Control & Switching Components
+  8: 'contactor'               # Contactor - switching for motors and large loads
+  9: 'relay'                   # Relay - electrically controlled switch
+  10: 'single_switch'          # Single switch - basic on/off control
+  11: 'double_switch'          # Double switch - dual control
+  12: 'two_way_switch'         # Two-way switch - control from two locations
+  13: 'push_button_switch'     # Push button switch - momentary contact
+  14: 'panel_indicator'        # Panel indicator light
+  
+  # Wiring & Connection Components
+  15: 'wire'                   # Single wire - basic circuit connection
+  16: 'cable'                  # Multi-core cable - power transmission
+  17: 'conduit'                # Conduit - protective pipe for cables
+  18: 'cable_tray'             # Cable tray - organized cable management
+  19: 'lug'                    # Cable lug - terminal for cable ends
+  20: 'terminal_block'         # Terminal block - wire connection point
+  21: 'cable_marker'           # Cable identification marker
+  22: 'expansion_joint'        # Cable tray connection joint
+  
+  # Lighting Components
+  23: 'led_light'              # LED light - energy efficient illumination
+  24: 'round_light'            # Round incandescent bulb
+  25: 'tube_light'             # Tube light - fluorescent lighting
+  26: 'emergency_light'        # Emergency light - backup illumination
+  27: 'halogen_light'          # Halogen light - high-intensity illumination
+  28: 'street_light'           # Street light - outdoor lighting
+  29: 'exit_sign'              # Exit sign - emergency exit indication
+  30: 'fire_button_sign'       # Fire alarm button sign
+  
+  # Power & Connection Points
+  31: 'power_socket'           # Power socket - general power connection
+  32: 'industrial_socket'      # Industrial socket - high-power equipment
+  33: 'single_phase_connection_point' # Single phase connection point
+  34: 'three_phase_connection_point'  # Three phase connection point
+  
+  # Earthing & Grounding
+  35: 'earth_rod'              # Earth rod - grounding electrode
+  36: 'earthing_wire'          # Earthing wire - grounding conductor
+  37: 'earth_pit'              # Earth pit - grounding excavation
+  38: 'earth_busbar'           # Earth busbar - grounding distribution
+  39: 'earth_terminal'         # Earth terminal - grounding connection
+  40: 'lightning_protection'   # Lightning protection system
+  
+  # Measurement & Instrumentation
+  41: 'voltmeter'              # Voltmeter - voltage measurement
+  42: 'ammeter'                # Ammeter - current measurement
+  43: 'power_meter'            # Power meter - power measurement
+  44: 'energy_meter'           # Energy meter - kWh measurement
+  45: 'multifunction_meter'    # Multifunction meter - multiple parameter measurement
+  46: 'frequency_meter'        # Frequency meter - Hz measurement
+  47: 'power_factor_meter'     # Power factor meter - power factor measurement
+  48: 'ct'                     # Current transformer - current measurement
+  49: 'pt'                     # Potential transformer - voltage measurement
+  
+  # Power Equipment
+  50: 'transformer'            # Transformer - voltage conversion
+  51: 'ups'                    # UPS - uninterruptible power supply
+  52: 'inverter'               # Inverter - DC to AC conversion
+  53: 'battery_bank'           # Battery bank - backup power storage
+  54: 'solar_panel'            # Solar panel - renewable energy generation
+  55: 'generator'              # Generator - backup power generation
+  56: 'motor'                  # Electric motor - mechanical drive
+  
+  # Sensors & Detection
+  57: 'sensor'                 # Motion sensor - movement detection
+  58: 'smoke_detector'         # Smoke detector - fire detection
+  59: 'smoke_detector_led'     # Smoke detector with LED indicator
+  60: 'motion_detector'        # Motion detector - movement sensing
+  61: 'fire_button'            # Fire alarm button - manual fire alarm
+  
+  # Alarm & Signaling
+  62: 'buzzer'                 # Buzzer - audio alarm device
+  63: 'alarm_system'           # Alarm system - complete security system
+  64: 'pilot_lamp'             # Pilot lamp - status indication
+  65: 'signal_lamp'            # Signal lamp - control indication
+  66: 'fire_alarm_panel'       # Fire alarm panel - fire system control
+  
+  # Access & Control
+  67: 'access_control'         # Access control - entry management
+  68: 'ventilation_fan'        # Ventilation fan - air circulation
+  
+  # Documentation & Labeling
+  69: 'label_tag'              # Label tag - component identification
+  70: 'circuit_diagram_legend' # Circuit diagram legend - symbol explanation
+  
+  # Placeholder classes for future expansion
+  71: 'reserved_71'            # Reserved for future use
+  72: 'reserved_72'            # Reserved for future use
+  73: 'reserved_73'            # Reserved for future use
+  74: 'reserved_74'            # Reserved for future use
+  75: 'reserved_75'            # Reserved for future use
+  76: 'reserved_76'            # Reserved for future use
 
 # Training hyperparameters
 epochs: 100
