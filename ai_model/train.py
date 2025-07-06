@@ -690,6 +690,109 @@ class ElectricalComponentTrainer:
             
         print("✅ Model export completed!")
 
+    def split_training_data_for_validation(self, validation_ratio=0.2):
+        """Split some training data to create validation set"""
+        print(f"📊 Creating validation set from training data ({validation_ratio*100}% split)...")
+        
+        # Get all training images
+        train_image_extensions = ['*.png', '*.jpg', '*.jpeg', '*.bmp', '*.tiff']
+        train_images = []
+        for ext in train_image_extensions:
+            train_images.extend(list(self.train_dir.glob(ext)))
+        
+        if len(train_images) == 0:
+            print("❌ No training images found to split!")
+            return False
+        
+        # Calculate split
+        num_val_images = int(len(train_images) * validation_ratio)
+        if num_val_images == 0:
+            print("⚠️  Too few images to create validation split!")
+            return False
+        
+        # Randomly select images for validation
+        import random
+        random.shuffle(train_images)
+        val_images = train_images[:num_val_images]
+        
+        print(f"   📁 Moving {len(val_images)} images to validation...")
+        
+        # Move images and corresponding labels
+        moved_count = 0
+        for img_path in val_images:
+            # Move image
+            val_img_path = self.val_dir / img_path.name
+            shutil.move(str(img_path), str(val_img_path))
+            
+            # Move corresponding label if it exists
+            label_path = self.train_labels_dir / f"{img_path.stem}.txt"
+            if label_path.exists():
+                val_label_path = self.val_labels_dir / f"{img_path.stem}.txt"
+                shutil.move(str(label_path), str(val_label_path))
+            
+            moved_count += 1
+        
+        print(f"✅ Successfully created validation set with {moved_count} images")
+        return True
+
+    def check_validation_data(self):
+        """Check if validation data exists and is usable"""
+        print("🔍 Checking validation data...")
+        
+        # Check for validation images
+        val_image_extensions = ['*.png', '*.jpg', '*.jpeg', '*.bmp', '*.tiff']
+        val_images = []
+        for ext in val_image_extensions:
+            val_images.extend(list(self.val_dir.glob(ext)))
+        
+        # Check for validation labels
+        val_labels = list(self.val_labels_dir.glob('*.txt'))
+        
+        print(f"   📁 Validation images found: {len(val_images)}")
+        print(f"   🏷️  Validation labels found: {len(val_labels)}")
+        
+        # Check if labels have actual content (not just empty files)
+        valid_labels = 0
+        for label_file in val_labels:
+            if label_file.stat().st_size > 0:  # File has content
+                valid_labels += 1
+        
+        print(f"   ✅ Valid labels (with content): {valid_labels}")
+        
+        # Determine if validation data is usable
+        has_valid_data = len(val_images) > 0 and valid_labels > 0
+        
+        if has_valid_data:
+            print("   🎯 Validation data available - will use for training")
+        else:
+            print("   ⚠️  No valid validation data found - will skip validation")
+            
+        return has_valid_data
+    
+    def create_dynamic_config(self, use_validation=True):
+        """Create a dynamic config file based on validation data availability"""
+        config_data = {
+            'train': str(self.base_dir / 'images' / 'train'),
+            'nc': self.config.get('nc', 77),
+            'names': self.config.get('names', {})
+        }
+        
+        if use_validation:
+            config_data['val'] = str(self.base_dir / 'images' / 'val')
+            print("   ✅ Config created with validation path")
+        else:
+            # Point validation to training data to avoid YOLO errors
+            config_data['val'] = str(self.base_dir / 'images' / 'train')
+            print("   ⚠️  Config created without separate validation (using training data)")
+        
+        # Save dynamic config
+        dynamic_config_path = 'dataset_dynamic.yaml'
+        with open(dynamic_config_path, 'w', encoding='utf-8') as f:
+            yaml.dump(config_data, f, default_flow_style=False)
+            
+        print(f"   📝 Dynamic config saved to: {dynamic_config_path}")
+        return dynamic_config_path
+
 def main():
     """Main training pipeline"""
     print("⚡ ElectroVision AI - Training Pipeline")
@@ -710,13 +813,6 @@ def main():
     # Create annotation guidelines
     trainer.create_annotation_guidelines()
     
-    # Prepare dataset (uncomment when you have raw data)
-    # trainer.prepare_dataset('raw_data')
-    
-    # Train model
-    print("\n🎯 Starting training process...")
-    print("Note: Make sure you have annotated images in the dataset directory")
-    
     # Check if dataset exists
     if not any(trainer.train_dir.glob('*.png')) and not any(trainer.train_dir.glob('*.jpg')):
         print("⚠️ No training images found!")
@@ -724,21 +820,29 @@ def main():
         print("And corresponding labels to:", trainer.train_labels_dir)
         print("Use the annotation guidelines to properly label your data.")
         return
-        
-    # Train the model
+    
+    # Check validation data and offer to create split if none exists
+    has_validation = trainer.check_validation_data()
+    
+    if not has_validation:
+        print("\n🤔 No validation data found.")
+        response = input("Would you like to create a validation split from training data? (y/n): ")
+        if response.lower() in ['y', 'yes']:
+            trainer.split_training_data_for_validation(0.2)  # 20% for validation
+    
+    print("\n🎯 Starting training process...")
+    
+    # Train the model (will automatically handle validation)
     results = trainer.train_model()
     
-    # Validate the model
-    trainer.validate_model()
+    # Validate the model only if we have validation data
+    if trainer.check_validation_data():
+        trainer.validate_model()
+    else:
+        print("⚠️  Skipping separate validation (no validation data)")
     
     # Test inference
     trainer.test_inference()
-    
-    # Export model
-    trainer.export_model()
-    
-    print("\n🎉 Training pipeline completed successfully!")
-    print("Your trained model is ready for deployment!")
 
 if __name__ == '__main__':
     main()
