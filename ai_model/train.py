@@ -534,12 +534,18 @@ class ElectricalComponentTrainer:
         print("📋 Annotation guidelines created: annotation_guidelines.json")
         
     def train_model(self):
-        """Train the YOLO model"""
+        """Train the YOLO model with dynamic validation handling and GPU optimization"""
         print("\n" + "="*60)
         print("🚀 STARTING MODEL TRAINING")
         print("="*60)
         
-        # Pre-training GPU check
+        # Check validation data availability first
+        use_validation = self.check_validation_data()
+        
+        # Create dynamic configuration
+        dynamic_config_path = self.create_dynamic_config(use_validation)
+        
+        # Pre-training GPU check and optimization
         if torch.cuda.is_available():
             print("🔥 GPU Training Status:")
             print(f"   🎯 Using device: {self.config['device']}")
@@ -547,6 +553,11 @@ class ElectricalComponentTrainer:
             
             # Clear GPU cache before training
             torch.cuda.empty_cache()
+            
+            # Force GPU memory cleanup
+            if torch.cuda.is_available():
+                torch.cuda.synchronize()
+                torch.cuda.empty_cache()
             
             # Check GPU memory before training
             gpu_memory_total = torch.cuda.get_device_properties(0).total_memory / (1024**3)
@@ -559,28 +570,45 @@ class ElectricalComponentTrainer:
             print(f"      Cached: {gpu_memory_cached:.2f} GB")
             print(f"      Free: {gpu_memory_total - gpu_memory_allocated:.2f} GB")
             
+            # Optimize batch size for GPU memory
+            if gpu_memory_total < 8.0:  # Less than 8GB
+                recommended_batch = min(self.config['batch_size'], 8)
+                if self.config['batch_size'] > recommended_batch:
+                    print(f"   ⚡ Optimizing batch size from {self.config['batch_size']} to {recommended_batch} for GPU memory")
+                    self.config['batch_size'] = recommended_batch
+            
             # GPU utilization test
             try:
                 print("🧪 Final GPU test before training...")
-                test_tensor = torch.rand(100, 100, device=self.config['device'])
+                test_tensor = torch.rand(1000, 1000, device=self.config['device'])
                 result = test_tensor @ test_tensor.T
+                torch.cuda.synchronize()
                 print("✅ GPU ready for training!")
                 del test_tensor, result
                 torch.cuda.empty_cache()
             except Exception as e:
                 print(f"❌ GPU test failed: {e}")
+                print("⚠️  Falling back to CPU training")
+                self.config['device'] = 'cpu'
         else:
             print("⚠️  Training on CPU (no GPU available)")
+            print("   💡 Consider using a system with NVIDIA GPU for faster training")
         
         print("="*60)
         
-        # Initialize YOLO model
+        # Initialize YOLO model with explicit device setting
         print("📦 Initializing YOLO model...")
         model = YOLO('yolov8n.pt')  # Start with nano model for faster training
         
-        # Confirm model is on GPU
-        if torch.cuda.is_available():
-            print(f"✅ Model initialized on: {self.config['device']}")
+        # Force model to GPU if available
+        if torch.cuda.is_available() and self.config['device'].startswith('cuda'):
+            try:
+                # Ensure model is on the correct device
+                model.to(self.config['device'])
+                print(f"✅ Model loaded on: {self.config['device']}")
+            except Exception as e:
+                print(f"⚠️  Could not move model to GPU: {e}")
+                self.config['device'] = 'cpu'
         
         print("🎯 Training Parameters:")
         print(f"   📊 Epochs: {self.config['epochs']}")
@@ -588,28 +616,111 @@ class ElectricalComponentTrainer:
         print(f"   🖼️  Image size: {self.config['img_size']}")
         print(f"   👥 Workers: {self.config['workers']}")
         print(f"   🔧 Device: {self.config['device']}")
+        print(f"   🎯 Validation: {'Enabled' if use_validation else 'Disabled (no valid data)'}")
+        print(f"   📁 Config: {dynamic_config_path}")
         
         print("\n🏁 Training starting now...")
         print("="*60)
         
-        # Train the model
-        results = model.train(
-            data=self.config_path,
-            epochs=self.config['epochs'],
-            imgsz=self.config['img_size'],
-            batch=self.config.get('batch_size', 16),
-            workers=self.config.get('workers', 8),
-            device=self.config['device'],
-            project='runs/train',
-            name='electrical_components',
-            save=True,
-            plots=True,
-            val=True,
-            verbose=True
-        )
+        # Train the model with optimized parameters
+        try:
+            results = model.train(
+                data=dynamic_config_path,  # Use dynamic config
+                epochs=self.config['epochs'],
+                imgsz=self.config['img_size'],
+                batch=self.config.get('batch_size', 16),
+                workers=self.config.get('workers', 8),
+                device=self.config['device'],  # Explicit GPU device
+                project='runs/train',
+                name='electrical_components',
+                save=True,
+                plots=True,
+                val=use_validation,  # Dynamic validation setting
+                verbose=True,
+                # GPU optimization parameters - disable AMP if issues
+                amp=False,  # Disable AMP to avoid torchvision CUDA issues
+                cache=False,  # Avoid caching to save GPU memory
+                single_cls=False,
+                optimizer='AdamW',
+                lr0=0.01,
+                patience=50,
+                save_period=10
+            )
+            
+        except NotImplementedError as e:
+            if "torchvision::nms" in str(e) and "CUDA" in str(e):
+                print(f"\n❌ TORCHVISION CUDA COMPATIBILITY ERROR!")
+                print(f"   🔧 Issue: torchvision doesn't have CUDA support for NMS operations")
+                print(f"   💡 This is a common PyTorch/torchvision version mismatch")
+                print(f"\n🔄 Attempting training with CPU fallback for NMS...")
+                
+                # Try with CPU device to avoid CUDA NMS issues
+                print(f"   📝 Switching to CPU training to avoid torchvision CUDA issues")
+                self.config['device'] = 'cpu'
+                torch.cuda.empty_cache()  # Clear GPU memory
+                
+                results = model.train(
+                    data=dynamic_config_path,
+                    epochs=self.config['epochs'],
+                    imgsz=self.config['img_size'],
+                    batch=self.config.get('batch_size', 16),
+                    workers=self.config.get('workers', 8),
+                    device='cpu',  # Force CPU
+                    project='runs/train',
+                    name='electrical_components',
+                    save=True,
+                    plots=True,
+                    val=use_validation,
+                    verbose=True,
+                    amp=False,
+                    cache=False
+                )
+                
+                print(f"\n⚠️  TRAINING COMPLETED ON CPU")
+                print(f"   🔧 To fix this for future GPU training:")
+                print(f"   1. Reinstall PyTorch and torchvision with matching CUDA versions:")
+                print(f"      pip uninstall torch torchvision")
+                print(f"      pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118")
+                print(f"   2. Or use: pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121")
+                
+            else:
+                raise e
+                
+        except RuntimeError as e:
+            if "out of memory" in str(e).lower():
+                print(f"\n❌ GPU OUT OF MEMORY ERROR!")
+                print(f"   💾 Try reducing batch size (current: {self.config['batch_size']})")
+                print(f"   💾 Current GPU memory: {torch.cuda.get_device_properties(0).total_memory / (1024**3):.1f} GB")
+                print(f"   💡 Suggestion: Reduce batch_size to 4 or 8 in config.yaml")
+                
+                # Try with reduced batch size automatically
+                print(f"\n🔄 Attempting training with reduced batch size...")
+                reduced_batch = max(1, self.config['batch_size'] // 2)
+                print(f"   📦 Reducing batch size to: {reduced_batch}")
+                
+                torch.cuda.empty_cache()  # Clear memory
+                
+                results = model.train(
+                    data=dynamic_config_path,
+                    epochs=self.config['epochs'],
+                    imgsz=self.config['img_size'],
+                    batch=reduced_batch,  # Reduced batch size
+                    workers=self.config.get('workers', 8),
+                    device=self.config['device'],
+                    project='runs/train',
+                    name='electrical_components',
+                    save=True,
+                    plots=True,
+                    val=use_validation,
+                    verbose=True,
+                    amp=False,  # Disable AMP
+                    cache=False
+                )
+            else:
+                raise e
         
         # Post-training GPU status
-        if torch.cuda.is_available():
+        if torch.cuda.is_available() and self.config['device'].startswith('cuda'):
             print("\n" + "="*60)
             print("🏆 TRAINING COMPLETED - GPU STATUS")
             print("="*60)
@@ -623,10 +734,23 @@ class ElectricalComponentTrainer:
             
             # Clean up GPU memory
             torch.cuda.empty_cache()
+            torch.cuda.synchronize()
             print("🧹 GPU cache cleared")
             print("="*60)
         
+        # Clean up dynamic config file
+        try:
+            os.remove(dynamic_config_path)
+            print(f"🧹 Cleaned up temporary config: {dynamic_config_path}")
+        except:
+            pass
+            
         print("✅ Training completed successfully!")
+        
+        if not use_validation:
+            print("⚠️  Note: Training completed without validation.")
+            print("   Consider adding validation data for better model evaluation.")
+            
         return results
         
     def validate_model(self, model_path='runs/train/electrical_components/weights/best.pt'):
@@ -793,22 +917,72 @@ class ElectricalComponentTrainer:
         print(f"   📝 Dynamic config saved to: {dynamic_config_path}")
         return dynamic_config_path
 
+    def check_gpu_setup(self):
+        """Comprehensive GPU setup check"""
+        print("\n🔍 GPU Setup Verification:")
+        print("="*50)
+        
+        # Check PyTorch CUDA
+        print(f"1. PyTorch version: {torch.__version__}")
+        print(f"2. CUDA available: {torch.cuda.is_available()}")
+        
+        if torch.cuda.is_available():
+            print(f"3. CUDA version: {torch.version.cuda}")
+            print(f"4. cuDNN version: {torch.backends.cudnn.version()}")
+            print(f"5. GPU count: {torch.cuda.device_count()}")
+            
+            for i in range(torch.cuda.device_count()):
+                gpu_name = torch.cuda.get_device_name(i)
+                gpu_memory = torch.cuda.get_device_properties(i).total_memory / (1024**3)
+                print(f"   GPU {i}: {gpu_name} ({gpu_memory:.1f} GB)")
+            
+            # Test GPU computation
+            try:
+                x = torch.rand(100, 100, device='cuda')
+                y = x @ x.T
+                print("6. ✅ GPU computation test: PASSED")
+            except Exception as e:
+                print(f"6. ❌ GPU computation test: FAILED - {e}")
+                return False
+                
+            # Check NVIDIA driver
+            try:
+                import subprocess
+                result = subprocess.run(['nvidia-smi'], capture_output=True, text=True)
+                if result.returncode == 0:
+                    print("7. ✅ NVIDIA driver: Working")
+                else:
+                    print("7. ⚠️  NVIDIA driver: Check installation")
+            except:
+                print("7. ❌ nvidia-smi not found - Check NVIDIA driver")
+                
+            return True
+        else:
+            print("❌ No GPU detected!")
+            print("\nTo enable GPU training:")
+            print("1. Install NVIDIA GPU drivers")
+            print("2. Install CUDA toolkit")
+            print("3. Install PyTorch with CUDA support:")
+            print("   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118")
+            return False
+
 def main():
-    """Main training pipeline"""
+    """Main training pipeline with GPU verification"""
     print("⚡ ElectroVision AI - Training Pipeline")
-    print("=" * 50)
-    
-    # GPU status banner
-    if torch.cuda.is_available():
-        print(f"🚀 GPU ACCELERATED TRAINING")
-        print(f"   GPU: {torch.cuda.get_device_name(0)}")
-        print(f"   Memory: {torch.cuda.get_device_properties(0).total_memory / (1024**3):.1f} GB")
-    else:
-        print("⚠️  CPU TRAINING (Consider using a GPU for faster training)")
     print("=" * 50)
     
     # Initialize trainer
     trainer = ElectricalComponentTrainer()
+    
+    # Check GPU setup
+    gpu_available = trainer.check_gpu_setup()
+    
+    if not gpu_available:
+        print("\n⚠️  No GPU available - training will be slow!")
+        response = input("Continue with CPU training? (y/n): ")
+        if response.lower() not in ['y', 'yes']:
+            print("Training cancelled.")
+            return
     
     # Create annotation guidelines
     trainer.create_annotation_guidelines()
@@ -832,7 +1006,7 @@ def main():
     
     print("\n🎯 Starting training process...")
     
-    # Train the model (will automatically handle validation)
+    # Train the model (will automatically handle validation and GPU)
     results = trainer.train_model()
     
     # Validate the model only if we have validation data
